@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { Upload } from "lucide-react";
 
 const wallpapers = [
   { id: "default", name: "Default", image: "https://images.unsplash.com/photo-1579547945413-497e1b99dac0?auto=format&fit=crop&w=300&q=80" },
@@ -98,11 +99,7 @@ const Wallpaper = () => {
                     />
                   ) : (
                     <div className="text-center p-4">
-                      <svg viewBox="0 0 24 24" className="h-10 w-10 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
+                      <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-muted-foreground">Upload custom image</p>
                     </div>
                   )}
@@ -118,11 +115,7 @@ const Wallpaper = () => {
               <div className="space-y-4">
                 <div className="border-2 border-dashed rounded-md p-6 text-center">
                   <div className="flex flex-col items-center">
-                    <svg viewBox="0 0 24 24" className="h-10 w-10 text-muted-foreground mb-4" fill="none" stroke="currentColor">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
+                    <Upload className="h-10 w-10 text-muted-foreground mb-4" />
                     <p className="text-lg font-medium mb-1">
                       Drag and drop image here
                     </p>
@@ -137,7 +130,7 @@ const Wallpaper = () => {
                       onChange={handleCustomWallpaperUpload}
                     />
                     <label htmlFor="wallpaper-upload">
-                      <Button as="span">Select Image</Button>
+                      <Button className="cursor-pointer">Select Image</Button>
                     </label>
                   </div>
                 </div>
