@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import apiClient from '@/lib/api-client';
+import { authAPI } from '@/lib/api-client';
 import { useToast } from '@/components/ui/use-toast';
 
 interface User {
@@ -8,6 +8,7 @@ interface User {
   name: string;
   email: string;
   profilePicture?: string;
+  subscription?: string;
 }
 
 interface AuthContextType {
@@ -33,8 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (token) {
         try {
-          const response = await apiClient.get('/auth/me');
-          setUser(response.data.user);
+          const response = await authAPI.getCurrentUser();
+          setUser(response.data);
         } catch (error) {
           localStorage.removeItem('auth_token');
         }
@@ -49,9 +50,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await apiClient.post('/auth/login', { email, password });
-      localStorage.setItem('auth_token', response.data.token);
-      setUser(response.data.user);
+      const response = await authAPI.login(email, password);
+      localStorage.setItem('auth_token', response.token);
+      setUser(response.user);
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
@@ -71,9 +72,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await apiClient.post('/auth/register', { name, email, password });
-      localStorage.setItem('auth_token', response.data.token);
-      setUser(response.data.user);
+      const response = await authAPI.register(name, email, password);
+      localStorage.setItem('auth_token', response.token);
+      setUser(response.user);
       toast({
         title: 'Registration successful!',
         description: 'Your account has been created.',
