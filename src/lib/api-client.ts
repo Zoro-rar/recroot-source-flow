@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { toast } from '@/components/ui/use-toast';
 
@@ -13,13 +12,10 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor for adding auth token
+// Bypassing authentication by not requiring token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+    // No token required for now
     return config;
   },
   (error) => {
@@ -34,12 +30,6 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     const { response } = error;
-    
-    if (response && response.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('auth_token');
-      window.location.href = '/auth/login';
-    }
     
     const errorMessage = 
       response && response.data.message 
@@ -56,7 +46,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Auth API endpoints
+// Auth API endpoints (keeping for future use)
 export const authAPI = {
   register: async (name: string, email: string, password: string) => {
     const response = await apiClient.post('/auth/register', { name, email, password });
@@ -69,8 +59,15 @@ export const authAPI = {
   },
   
   getCurrentUser: async () => {
-    const response = await apiClient.get('/auth/me');
-    return response.data;
+    // Return mock user data
+    return {
+      data: {
+        _id: '65fa3d7d36e2673e4631706d',
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'admin'
+      }
+    };
   },
   
   updateProfile: async (userData: any) => {

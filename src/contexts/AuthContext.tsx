@@ -23,80 +23,37 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Set a default mock user to bypass authentication
+  const [user, setUser] = useState<User | null>({
+    id: '65fa3d7d36e2673e4631706d',
+    name: 'Test User',
+    email: 'test@example.com',
+  });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      const token = localStorage.getItem('auth_token');
-      
-      if (token) {
-        try {
-          const response = await authAPI.getCurrentUser();
-          setUser(response.data);
-        } catch (error) {
-          localStorage.removeItem('auth_token');
-        }
-      }
-      
-      setLoading(false);
-    };
-    
-    checkAuthStatus();
-  }, []);
-
+  // Bypass authentication checks
   const login = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const response = await authAPI.login(email, password);
-      localStorage.setItem('auth_token', response.token);
-      setUser(response.user);
-      toast({
-        title: 'Welcome back!',
-        description: 'You have successfully logged in.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Login failed',
-        description: 'Please check your credentials and try again.',
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    // Authentication bypassed - using mock user
+    toast({
+      title: 'Authentication bypassed',
+      description: 'Using test user account.',
+    });
   };
 
   const register = async (name: string, email: string, password: string) => {
-    try {
-      setLoading(true);
-      const response = await authAPI.register(name, email, password);
-      localStorage.setItem('auth_token', response.token);
-      setUser(response.user);
-      toast({
-        title: 'Registration successful!',
-        description: 'Your account has been created.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Registration failed',
-        description: 'Please try again with different credentials.',
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    // Authentication bypassed - using mock user
+    toast({
+      title: 'Authentication bypassed',
+      description: 'Using test user account.',
+    });
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
-    setUser(null);
+    // No need to log out - we're using a mock user
     toast({
-      title: 'Logged out',
-      description: 'You have been successfully logged out.',
+      title: 'Authentication bypassed',
+      description: 'Using test user account.',
     });
   };
 
@@ -108,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
-        isAuthenticated: !!user,
+        isAuthenticated: true, // Always authenticated
       }}
     >
       {children}

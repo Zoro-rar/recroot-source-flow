@@ -1,9 +1,102 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Upload, File } from "lucide-react";
+import { candidatesAPI } from "@/lib/api-client";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const NewCandidate = () => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleBulkFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setBulkFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleSingleUpload = async () => {
+    if (!selectedFile) {
+      toast({
+        variant: 'destructive',
+        title: 'No file selected',
+        description: 'Please select a resume file to upload',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const result = await candidatesAPI.uploadResume(selectedFile);
+      toast({
+        title: 'Resume Uploaded',
+        description: 'Resume has been successfully uploaded',
+      });
+      // Navigate to view candidates page
+      navigate('/database/view-candidate');
+    } catch (error) {
+      console.error('Upload error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (bulkFiles.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No files selected',
+        description: 'Please select resume files to upload',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Process each file in the bulk upload array
+      const promises = bulkFiles.map(file => candidatesAPI.uploadResume(file));
+      await Promise.all(promises);
+      
+      toast({
+        title: 'Resumes Uploaded',
+        description: `${bulkFiles.length} resumes have been successfully uploaded`,
+      });
+      // Navigate to view candidates page
+      navigate('/database/view-candidate');
+    } catch (error) {
+      console.error('Bulk upload error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, isBulk: boolean) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (isBulk) {
+        setBulkFiles(Array.from(e.dataTransfer.files));
+      } else {
+        setSelectedFile(e.dataTransfer.files[0]);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -25,54 +118,105 @@ const NewCandidate = () => {
               <TabsTrigger value="bulk">Bulk Upload</TabsTrigger>
             </TabsList>
             <TabsContent value="single" className="mt-6 space-y-4">
-              <div className="border-2 border-dashed rounded-md p-10 text-center">
+              <div 
+                className={`border-2 border-dashed rounded-md p-10 text-center ${selectedFile ? 'border-primary' : ''}`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, false)}
+              >
                 <div className="mx-auto flex flex-col items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 text-muted-foreground mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                  {selectedFile ? (
+                    <>
+                      <File className="h-10 w-10 text-primary mb-4" />
+                      <p className="text-lg font-medium mb-1">{selectedFile.name}</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-10 w-10 text-muted-foreground mb-4" />
+                      <p className="text-lg font-medium mb-1">Drag and drop resume file</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        or click to browse (PDF, DOC, DOCX)
+                      </p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    id="resume-upload"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <Button 
+                    onClick={() => document.getElementById('resume-upload')?.click()}
+                    variant={selectedFile ? 'secondary' : 'default'}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <p className="text-lg font-medium mb-1">Drag and drop resume file</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    or click to browse (PDF, DOC, DOCX)
-                  </p>
-                  <Button>Select File</Button>
+                    {selectedFile ? 'Change File' : 'Select File'}
+                  </Button>
                 </div>
               </div>
+              {selectedFile && (
+                <Button 
+                  className="w-full" 
+                  onClick={handleSingleUpload}
+                  disabled={isUploading}
+                >
+                  {isUploading ? 'Uploading...' : 'Upload Resume'}
+                </Button>
+              )}
             </TabsContent>
             <TabsContent value="bulk" className="mt-6 space-y-4">
-              <div className="border-2 border-dashed rounded-md p-10 text-center">
+              <div 
+                className={`border-2 border-dashed rounded-md p-10 text-center ${bulkFiles.length > 0 ? 'border-primary' : ''}`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, true)}
+              >
                 <div className="mx-auto flex flex-col items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 text-muted-foreground mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                  {bulkFiles.length > 0 ? (
+                    <>
+                      <File className="h-10 w-10 text-primary mb-4" />
+                      <p className="text-lg font-medium mb-1">{bulkFiles.length} files selected</p>
+                      <ul className="text-sm text-muted-foreground mb-4 max-h-32 overflow-y-auto">
+                        {bulkFiles.map((file, index) => (
+                          <li key={index}>{file.name}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-10 w-10 text-muted-foreground mb-4" />
+                      <p className="text-lg font-medium mb-1">Drag and drop multiple resume files</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        or click to browse (PDF, DOC, DOCX)
+                      </p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    id="bulk-resume-upload"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    multiple
+                    onChange={handleBulkFileChange}
+                  />
+                  <Button 
+                    onClick={() => document.getElementById('bulk-resume-upload')?.click()}
+                    variant={bulkFiles.length > 0 ? 'secondary' : 'default'}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <p className="text-lg font-medium mb-1">Drag and drop multiple resume files</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    or click to browse (PDF, DOC, DOCX)
-                  </p>
-                  <Button>Select Files</Button>
+                    {bulkFiles.length > 0 ? 'Change Files' : 'Select Files'}
+                  </Button>
                 </div>
               </div>
+              {bulkFiles.length > 0 && (
+                <Button 
+                  className="w-full" 
+                  onClick={handleBulkUpload}
+                  disabled={isUploading}
+                >
+                  {isUploading ? 'Uploading...' : `Upload ${bulkFiles.length} Resumes`}
+                </Button>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
